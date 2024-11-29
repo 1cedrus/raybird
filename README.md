@@ -1,3 +1,3 @@
-# RAY-BIRD =))
+# Raybird =))
 
-Raybird is flappybird clone written in C using raylib library.
+Raybird is Flappybird clone written in C using raylib library.
