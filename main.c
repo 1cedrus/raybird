@@ -3,10 +3,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <assert.h>
+#include <math.h>
 
 #include "include/raylib.h"
 #include "include/sewer.h"
-#include <math.h>
 
 #define WINDOW_WIDTH 500
 #define WINDOW_HEIGHT 600
@@ -34,7 +34,7 @@ int main() {
     float acceleration = -800;
 
     uint16_t point = 0;
-    char pointStr[6];
+    char pointStr[50];
 
     Sewer* pump[5] = {0};
     int pumpSize = 0;
@@ -69,20 +69,6 @@ int main() {
             };
 
             if (isDie) {
-                if (position.y == DEATH_POSITION) {
-                    if (IsKeyPressed(KEY_SPACE)) {
-                        PlaySound(swooshSound);
-
-                        freePump(pump, &pumpSize);
-
-                        speed = -250;
-                        point = 0;
-                        position.y = 300;
-
-                        isDie = false;
-                    }
-                }
-
                 for (int i = 0; i < pumpSize; i += 1) {
                     Rectangle sewerUp = {
                         pump[i]->xPosition, 0, pump[i]->upSewer->x, pump[i]->upSewer->y
@@ -99,6 +85,25 @@ int main() {
                     };
 
                     DrawRectangleRec(sewerDown, GREEN);
+                }
+
+                if (position.y == DEATH_POSITION) {
+                    if (IsKeyPressed(KEY_SPACE)) {
+                        PlaySound(swooshSound);
+
+                        freePump(pump, &pumpSize);
+
+                        speed = -250;
+                        point = 0;
+                        position.y = 300;
+
+                        isDie = false;
+                    }
+
+                    DrawText("Game Over!", 75, 200, 64, WHITE);
+                    sprintf(pointStr, "Your point is %d", point);
+                    DrawText(pointStr, 125, 280, 32, WHITE);
+                    DrawText("Press space to start again!", 25, 330, 32, WHITE);
                 }
             } else {
                 if (IsKeyPressed(KEY_SPACE)) {
