@@ -10,7 +10,7 @@
 
 #define WINDOW_WIDTH 500
 #define WINDOW_HEIGHT 600
-#define DEATH_POSITION 550
+#define DEATH_POSITION(BASE_HEIGHT) WINDOW_HEIGHT - 50 - BASE_HEIGHT 
 
 int freeSewer(Sewer* sewer);
 int freePump(Sewer** pump, int *size);
@@ -27,8 +27,18 @@ int main() {
     Sound hitSewerSound = LoadSound("audio/hit.wav");
     Sound swooshSound = LoadSound("audio/swoosh.wav");
 
+    Texture background = LoadTexture("sprites/background-day.png");
+    Texture base = LoadTexture("sprites/base.png");
+    Texture sewer = LoadTexture("sprites/pipe-green.png");
+
+    Texture birdUpFlap = LoadTexture("sprites/yellowbird-upflap.png");
+    Texture birdMidFlap = LoadTexture("sprites/yellowbird-midflap.png");
+    Texture birdDownFlap = LoadTexture("sprites/yellowbird-downflap.png");
+
+    Texture birdFlap[3] = {birdUpFlap, birdMidFlap, birdDownFlap};
+
     Vector2 position = {100, 300};
-    Vector2 size = {50, 50};
+    Vector2 size = {51, 36};
 
     float speed = 0;
     float acceleration = -800;
@@ -43,10 +53,26 @@ int main() {
     bool alreadyCount = false;
     bool isDie = false;
 
+    float scrollingBack = 0.0f;
+    float scrollingBase = 0.0f;
+
+    float birdRotation = 0.0f;
+
     while (!WindowShouldClose()) {
         float dt = GetFrameTime();
         BeginDrawing();
         ClearBackground(BLACK);
+    
+        if (!isDie) {
+            scrollingBack -= 0.1f;
+            scrollingBase -= 150 * dt;
+        }
+
+        if (scrollingBack <= -background.width * 0.3f) scrollingBack = 0.0f;
+        if (scrollingBase <= -base.width) scrollingBase = 0.0f;
+
+        DrawTextureEx(background, (Vector2){ scrollingBack, 0.0f }, 0.0f, 1.2f, WHITE);
+        DrawTextureEx(background, (Vector2){ background.width + scrollingBack, 0.0f }, 0.0f, 1.2f, WHITE);
 
         if (!isStart) {
             if (IsKeyPressed(KEY_SPACE)) {
@@ -58,9 +84,11 @@ int main() {
             speed -= acceleration * dt;   
 
             position.y += speed * dt;
-            position.y = fminf(position.y, DEATH_POSITION);
+            position.y = fminf(position.y, DEATH_POSITION(base.height));
 
-            if (position.y == DEATH_POSITION) {
+            birdRotation = fminf(birdRotation + 90.0f * dt, 90.0f);
+
+            if (position.y == DEATH_POSITION(base.height)) {
                 isDie = true;
             }
 
@@ -70,24 +98,11 @@ int main() {
 
             if (isDie) {
                 for (int i = 0; i < pumpSize; i += 1) {
-                    Rectangle sewerUp = {
-                        pump[i]->xPosition, 0, pump[i]->upSewer->x, pump[i]->upSewer->y
-                    };
-
-                    DrawRectangleRec(sewerUp, GREEN);
-
-                    Vector2 positionDown = {
-                        pump[i]->xPosition, 600 - pump[i]->downSewer->y
-                    };
-
-                    Rectangle sewerDown = {
-                        pump[i]->xPosition, 600 - pump[i]->downSewer->y,pump[i]->downSewer->x, pump[i]->downSewer->y
-                    };
-
-                    DrawRectangleRec(sewerDown, GREEN);
+                    DrawTextureEx(sewer, (Vector2){pump[i]->xPosition + sewer.width * 2, pump[i]->upSewer->y}, 180.0f, 2.0f, WHITE);
+                    DrawTextureEx(sewer, (Vector2){pump[i]->xPosition, 600 - pump[i]->downSewer->y}, 0.0f, 2.0f, WHITE);
                 }
 
-                if (position.y == DEATH_POSITION) {
+                if (position.y == DEATH_POSITION(base.height)) {
                     if (IsKeyPressed(KEY_SPACE)) {
                         PlaySound(swooshSound);
 
@@ -98,6 +113,8 @@ int main() {
                         position.y = 300;
 
                         isDie = false;
+                        birdRotation = -30.0f;
+                        alreadyCount = false;
                     }
 
                     DrawText("Game Over!", 75, 200, 64, WHITE);
@@ -109,6 +126,7 @@ int main() {
                 if (IsKeyPressed(KEY_SPACE)) {
                     PlaySound(wingSound);
                     speed = -250;
+                    birdRotation = -30.0f;
                 }
 
                 if (!pumpSize || pump[pumpSize - 1]->xPosition < 800 - DEFAULT_SEWER_WIDTH * 2.2) {
@@ -138,17 +156,19 @@ int main() {
                         pump[i]->xPosition, 0, pump[i]->upSewer->x, pump[i]->upSewer->y
                     };
 
-                    DrawRectangleRec(sewerUp, GREEN);
+                    //DrawRectangleRec(sewerUp, GREEN);
+                    DrawTextureEx(sewer, (Vector2){pump[i]->xPosition + sewer.width * 2, pump[i]->upSewer->y}, 180.0f, 2.0f, WHITE);
 
                     Vector2 positionDown = {
                         pump[i]->xPosition, 600 - pump[i]->downSewer->y
                     };
 
                     Rectangle sewerDown = {
-                        pump[i]->xPosition, 600 - pump[i]->downSewer->y,pump[i]->downSewer->x, pump[i]->downSewer->y
+                        pump[i]->xPosition, 600 - pump[i]->downSewer->y, pump[i]->downSewer->x, pump[i]->downSewer->y - base.height 
                     };
 
-                    DrawRectangleRec(sewerDown, GREEN);
+                    //DrawRectangleRec(sewerDown, GREEN);
+                    DrawTextureEx(sewer, (Vector2){pump[i]->xPosition, 600 - pump[i]->downSewer->y}, 0.0f, 2.0f, WHITE);
 
                     pump[i]->xPosition -= 150 * dt;
 
@@ -164,11 +184,34 @@ int main() {
                 DrawText(pointStr, 25, 25, 32, WHITE);
             }
 
-            DrawRectangleRec(birdRec, RED);
+            DrawTexturePro(
+                birdFlap[(int) (GetTime() * 10) % 3],
+                (Rectangle){0, 0, birdMidFlap.width, birdMidFlap.height},
+                (Rectangle){position.x + birdRec.width / 2, position.y + birdRec.height / 2, birdRec.width, birdRec.height}, 
+                (Vector2) {birdRec.width / 2, birdRec.height / 2},                            
+                birdRotation,
+                WHITE       
+            );
         }
+
+        DrawTextureEx(base, (Vector2){ scrollingBase, 600 - base.height }, 0.0f, 1.6f, WHITE);
+        DrawTextureEx(base, (Vector2){ base.width + scrollingBase - 30, 600 - base.height }, 0.0f, 1.6f, WHITE);
 
         EndDrawing();
     }
+
+    UnloadSound(wingSound);
+    UnloadSound(pointSound);
+    UnloadSound(dieSound);
+    UnloadSound(hitSewerSound);
+    UnloadSound(swooshSound);
+
+    UnloadTexture(background);
+    UnloadTexture(base);
+    UnloadTexture(sewer);   
+    UnloadTexture(birdUpFlap);
+    UnloadTexture(birdMidFlap);
+    UnloadTexture(birdDownFlap);
 
     CloseWindow(); 
     return 0;
