@@ -21,11 +21,11 @@ int main() {
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Raybird"); 
     SetTargetFPS(60);     
 
-    Sound wingSound = LoadSound("audio/wing.wav");
-    Sound pointSound = LoadSound("audio/point.wav");
-    Sound dieSound = LoadSound("audio/die.wav");
-    Sound hitSewerSound = LoadSound("audio/hit.wav");
-    Sound swooshSound = LoadSound("audio/swoosh.wav");
+    Sound wingSound = LoadSound("audio/wing.ogg");
+    Sound pointSound = LoadSound("audio/point.ogg");
+    Sound dieSound = LoadSound("audio/die.ogg");
+    Sound hitSewerSound = LoadSound("audio/hit.ogg");
+    Sound swooshSound = LoadSound("audio/swoosh.ogg");
 
     Texture background = LoadTexture("sprites/background-day.png");
     Texture base = LoadTexture("sprites/base.png");
